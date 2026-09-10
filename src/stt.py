@@ -1,9 +1,10 @@
 """
 Local speech-to-text using faster-whisper.
 
-Hands-free: listening starts automatically and stops on its own once you've
-gone quiet for SILENCE_DURATION seconds. Runs entirely on your laptop, no
-API key or internet needed.
+Hands-free by default: listening starts automatically and stops on its own
+once you've gone quiet for SILENCE_DURATION seconds. You can also press
+ENTER at any time to stop recording immediately, which is handy in a noisy
+room where background sound keeps it from detecting silence on its own.
 """
 
 import time
@@ -19,7 +20,14 @@ from config import (
     WHISPER_MODEL_SIZE,
 )
 
-CHUNK_SECONDS = 0.2  # how often volume is checked while listening
+try:
+    import msvcrt  # Windows-only: lets us check for a keypress without blocking
+
+    HAS_KEY_OVERRIDE = True
+except ImportError:
+    HAS_KEY_OVERRIDE = False
+
+CHUNK_SECONDS = 0.2  # how often volume (and the keyboard) is checked while listening
 
 
 class SpeechToText:
@@ -29,8 +37,16 @@ class SpeechToText:
         self.sample_rate = 16000
         self.chunk_frames = int(self.sample_rate * CHUNK_SECONDS)
 
-    def _record_until_silence(self) -> np.ndarray:
-        print("\nListening... (go ahead, it'll stop after you pause)")
+    def _record(self) -> np.ndarray:
+        if HAS_KEY_OVERRIDE:
+            print("\nListening... (auto-stops after you pause, or press ENTER to stop now)")
+        else:
+            print("\nListening... (auto-stops after you pause)")
+
+        # Clear out any leftover keypress sitting in the buffer from before
+        if HAS_KEY_OVERRIDE:
+            while msvcrt.kbhit():
+                msvcrt.getch()
 
         chunks = []
         speech_started = False
@@ -41,6 +57,10 @@ class SpeechToText:
             while True:
                 data, _ = stream.read(self.chunk_frames)
                 chunks.append(data.copy())
+
+                if HAS_KEY_OVERRIDE and msvcrt.kbhit():
+                    msvcrt.getch()  # consume the keypress
+                    break
 
                 volume = float(np.sqrt(np.mean(data.astype(np.float64) ** 2)))
                 now = time.time()
@@ -68,6 +88,6 @@ class SpeechToText:
         return " ".join(segment.text.strip() for segment in segments).strip()
 
     def listen(self) -> str:
-        """Block until you've spoken and gone quiet, then return the transcript."""
-        audio = self._record_until_silence()
+        """Block until you've spoken and gone quiet (or pressed ENTER), then return the transcript."""
+        audio = self._record()
         return self.transcribe(audio)
