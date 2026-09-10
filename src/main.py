@@ -1,7 +1,7 @@
 """
 Butcher — personal voice agent, entry point.
 
-Loop: record your voice -> transcribe -> agent thinks/acts -> speak reply.
+Loop: listen -> transcribe -> agent thinks/acts -> speak reply.
 Everything runs locally: Whisper for STT, Ollama for the LLM, Piper for TTS.
 """
 
@@ -22,7 +22,7 @@ def main():
     tts = TextToSpeech()
     agent = VoiceAgent()
 
-    print("\nButcher is ready. Say 'exit' or 'quit' to stop.\n")
+    print("\nButcher is ready and listening. Say 'exit' or 'quit' to stop.\n")
 
     while True:
         user_text = stt.listen()
