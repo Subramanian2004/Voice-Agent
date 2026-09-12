@@ -25,6 +25,11 @@ ask a short clarifying question instead of guessing.
 You only have the tools you were actually given. If a request needs a capability
 you don't have a tool for, say so plainly — never invent, describe, or output a
 fake tool call for something you can't actually do.
+
+When the user describes something to click by what it looks like or its label
+(e.g. "the Subscribe button", "my profile picture"), use find_and_click with that
+description. Only use click_at when you already have exact pixel coordinates —
+never guess coordinates yourself.
 """
 
 
