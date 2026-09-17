@@ -4,3 +4,4 @@ __pycache__/
 .env
 voices/*.onnx
 voices/*.onnx.json
+browser_profile/

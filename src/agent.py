@@ -9,6 +9,7 @@ from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
+from browser_tools import BROWSER_TOOLS
 from config import OLLAMA_MODEL
 from tools import ALL_TOOLS
 
@@ -26,17 +27,24 @@ You only have the tools you were actually given. If a request needs a capability
 you don't have a tool for, say so plainly — never invent, describe, or output a
 fake tool call for something you can't actually do.
 
-When the user describes something to click by what it looks like or its label
-(e.g. "the Subscribe button", "my profile picture"), use find_and_click with that
-description. Only use click_at when you already have exact pixel coordinates —
-never guess coordinates yourself.
+For anything happening INSIDE A WEB BROWSER (opening a site, clicking a link or
+button on a page, filling in a form, searching on YouTube, etc.), always use the
+browser tools (open_browser_url, read_browser_page, click_browser_text,
+type_in_browser_field) — never find_and_click or click_at for browser content.
+Butcher's browser is separate from the user's normal Chrome and starts logged
+out of everything.
+
+For NON-browser desktop apps, when the user describes something to click by
+what it looks like or its label, use find_and_click with that description.
+Only use click_at when you already have exact pixel coordinates — never guess
+coordinates yourself.
 """
 
 
 def build_agent():
     return create_agent(
         model=f"ollama:{OLLAMA_MODEL}",
-        tools=ALL_TOOLS,
+        tools=ALL_TOOLS + BROWSER_TOOLS,
         system_prompt=SYSTEM_PROMPT,
         checkpointer=InMemorySaver(),
     )
